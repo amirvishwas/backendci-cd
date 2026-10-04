@@ -2,15 +2,15 @@ name: Deploy to EC2
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Deploy to EC2
@@ -22,9 +22,21 @@ jobs:
           script: |
             cd /var/www/backendci-cd
 
+            # Load NVM
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
+            # Get latest code
             git pull origin main
+
+            # Use project Node version
+            nvm use
+
+            # Install dependencies
             npm ci
 
+            # Restart PM2
             pm2 restart ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
 
+            # Save PM2
             pm2 save
